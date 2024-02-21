@@ -1,6 +1,7 @@
 package com.example.jobsearch.servlet;
 
 import com.example.jobsearch.db.MySQLConnection;
+import com.example.jobsearch.db.RedisConnection;
 import com.example.jobsearch.entity.Item;
 import com.example.jobsearch.entity.ResultResponse;
 import com.example.jobsearch.external.SerpClient;
@@ -13,6 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -23,7 +25,7 @@ public class SearchServlet extends HttpServlet {
     }
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         ObjectMapper mapper = new ObjectMapper();
-        response.setContentType("application/json");
+
         HttpSession session = request.getSession(false);
 //        if (session == null) {
 //            response.setStatus(403);
@@ -39,9 +41,24 @@ public class SearchServlet extends HttpServlet {
         Set<String> favoriteItemsIds = connection.getFavoriteItemIds(userId);
         connection.close();
 
-        SerpClient client = new SerpClient();
+        response.setContentType("application/json");
+        RedisConnection redis = new RedisConnection();
+        String cachedResult = redis.getSearchResult(lat, lon, null);
+        List<Item> items = null;
+        if (cachedResult != null) {
+            items = Arrays.asList(mapper.readValue(cachedResult,
+                    Item[].class));
+        } else {
+            SerpClient client = new SerpClient();
+            items = client.search(lat, lon, null);
+            redis.setSearchResult(lat, lon, null,
+                    mapper.writeValueAsString(items));
+        }
+        redis.close();
 
-        List<Item> items = client.search(lat, lon, null);
+//        SerpClient client = new SerpClient();
+//
+//        List<Item> items = client.search(lat, lon, null);
         for (Item item : items) {
             item.setFavorite(favoriteItemsIds.contains(item.getId()));
         }

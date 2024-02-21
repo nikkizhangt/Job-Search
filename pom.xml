@@ -72,6 +72,11 @@
             <artifactId>mysql-connector-java</artifactId>
             <version>8.0.21</version>
         </dependency>
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+            <version>3.3.0</version>
+        </dependency>
 <!--        <dependency>-->
 <!--            <groupId>com.thetransactioncompany</groupId>-->
 <!--            <artifactId>cors-filter</artifactId>-->
